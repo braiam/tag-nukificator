@@ -1,6 +1,32 @@
 <?php
 include "config.php";
 
+echo "Access token needed (to perform the nuking). Please go to erwaysoftware.com/oauth to get an access token." . PHP_EOL . "Enter access token: ";
+
+$handle = fopen ("php://stdin","r");
+$line = fgets($handle);
+
+$access_token = trim($line);
+
+echo "validating token..." . PHP_EOL;
+
+$commentinfourl = 'https://api.stackexchange.com/2.2/access-tokens/' . $access_token;
+$commentinfodata = array();
+$response = (new Curl)->exec($commentinfourl . '?' . http_build_query($commentinfodata), [CURLOPT_ENCODING => 'gzip']);
+
+$tokenvalidate=json_decode($response);
+
+$colors = new Colors();
+
+if (count($tokenvalidate->{"items"}) > 0)
+{
+	echo $colors->getColoredString("Your token looks good. Wonderful.", "green") . PHP_EOL . PHP_EOL;
+}
+else
+{
+	echo $colors->getColoredString("Your token couldn't be validated. You might not be able to retag questions.", "red") . PHP_EOL . PHP_EOL;
+}
+
 echo 'Tag to inspect: ';
 
 $handle = fopen ("php://stdin","r");
@@ -20,7 +46,6 @@ $obj=json_decode($response);
 
 $questions = $obj->{"items"};
 
-$colors = new Colors();
 
 foreach ($questions as $question)
 {
@@ -40,6 +65,11 @@ foreach ($questions as $question)
 	$line = fgets($handle);
 
 	$response = trim($line);
+
+	if ($response == "y")
+	{
+		
+	}
 }
 
 class Curl
