@@ -8,9 +8,9 @@ $access_token = trim($line);
 
 echo "validating token..." . PHP_EOL;
 
-$commentinfourl = 'https://api.stackexchange.com/2.2/access-tokens/' . $access_token;
-$commentinfodata = array();
-$response = (new Curl)->exec($commentinfourl . '?' . http_build_query($commentinfodata), [CURLOPT_ENCODING => 'gzip']);
+$accesstokenvalidateurl = 'https://api.stackexchange.com/2.2/access-tokens/' . $access_token;
+$accesstokenvalidatedata = array();
+$response = (new Curl)->exec($accesstokenvalidateurl . '?' . http_build_query($accesstokenvalidatedata), [CURLOPT_ENCODING => 'gzip']);
 
 $tokenvalidate=json_decode($response);
 
@@ -34,9 +34,9 @@ $tag = trim($line);
 
 echo "fetching last 100 [" . $tag  . "] questions...";
 
-$commentinfourl = 'https://api.stackexchange.com/2.2/questions';
-$commentinfodata = array("site" => 'stackoverflow', "tagged" => $tag, "key" => "6Z09liTt4uTQU*a4DYOXVQ((", "access_token" => $access_token, "filter" => "!Fcr3VId0gGli*1j_vQJZ0Ox6lU");
-$response = (new Curl)->exec($commentinfourl . '?' . http_build_query($commentinfodata), [CURLOPT_ENCODING => 'gzip']);
+$questionsurl = 'https://api.stackexchange.com/2.2/questions';
+$questionsdata = array('sort' => 'creation', "site" => 'stackoverflow', "tagged" => $tag, "key" => "6Z09liTt4uTQU*a4DYOXVQ((", "access_token" => $access_token, "filter" => "!Fcr3VId0gGli*1j_vQJZ0Ox6lU");
+$response = (new Curl)->exec($questionsurl . '?' . http_build_query($questionsdata), [CURLOPT_ENCODING => 'gzip']);
 
 echo " fetched" . PHP_EOL;
 
@@ -47,7 +47,7 @@ $questions = $obj->{"items"};
 
 foreach ($questions as $question)
 {
-	echo PHP_EOL . "    " . $colors->getColoredString($question->{"title"}, "red") . PHP_EOL . PHP_EOL;
+	echo PHP_EOL . "    " . $colors->getColoredString(htmlspecialchars_decode($question->{"title"}, ENT_QUOTES), "red") . PHP_EOL . PHP_EOL;
 
 	echo $colors->getColoredString(mb_substr(htmlspecialchars_decode($question -> {"body_markdown"}, ENT_QUOTES), 0, 500), "blue") . PHP_EOL . PHP_EOL;
 
@@ -73,7 +73,6 @@ foreach ($questions as $question)
 		$taglist = str_replace(";;", ";", $taglist);
 
 		$editURL = 'https://api.stackexchange.com/2.2/questions/' . $question->{"question_id"} . '/edit';
-		echo 'https://api.stackexchange.com/2.2/questions/' . $question->{"question_id"} . '/edit';
 		$editData = array('site' => 'stackoverflow', 'preview' => 'false', 'id' => $question->{"question_id"}, 'key' => "6Z09liTt4uTQU*a4DYOXVQ((", 'access_token' => $access_token, 'title' => html_entity_decode($question -> {"title"}, ENT_QUOTES), 'body' => html_entity_decode($question -> {"body_markdown"}, ENT_QUOTES), 'tags' => $taglist, 'comment' => 'rm [' . $tag . '] tag');
 		$options = array(
 			'http' => array(
@@ -84,7 +83,8 @@ foreach ($questions as $question)
 			),
 		);
 		$context = stream_context_create($options);
-		print_r(gzdecode(file_get_contents($editURL, false, $context)));
+		$obj = json_decode(gzdecode(file_get_contents($editURL, false, $context)));
+		
 	}
 }
 
