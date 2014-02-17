@@ -1,6 +1,4 @@
 <?php
-include "config.php";
-
 echo "Access token needed (to perform the nuking). Please go to erwaysoftware.com/oauth to get an access token." . PHP_EOL . "Enter access token: ";
 
 $handle = fopen ("php://stdin","r");
@@ -37,7 +35,7 @@ $tag = trim($line);
 echo "fetching last 100 [" . $tag  . "] questions...";
 
 $commentinfourl = 'https://api.stackexchange.com/2.2/questions';
-$commentinfodata = array("site" => 'stackoverflow', "tagged" => $tag, "key" => "6Z09liTt4uTQU*a4DYOXVQ((", "access_token" => StackAccessToken(), "filter" => "!)Q3J5qpRx7SYX9_raoN3Q4cY");
+$commentinfodata = array("site" => 'stackoverflow', "tagged" => $tag, "key" => "6Z09liTt4uTQU*a4DYOXVQ((", "access_token" => $access_token, "filter" => "!Fcr3VId0gGli*1j_vQJZ0Ox6lU");
 $response = (new Curl)->exec($commentinfourl . '?' . http_build_query($commentinfodata), [CURLOPT_ENCODING => 'gzip']);
 
 echo " fetched" . PHP_EOL;
@@ -51,7 +49,7 @@ foreach ($questions as $question)
 {
 	echo PHP_EOL . "    " . $colors->getColoredString($question->{"title"}, "red") . PHP_EOL . PHP_EOL;
 
-	echo $colors->getColoredString(mb_substr($question -> {"body_markdown"}, 0, 500), "blue") . PHP_EOL . PHP_EOL;
+	echo $colors->getColoredString(mb_substr(htmlspecialchars_decode($question -> {"body_markdown"}, ENT_QUOTES), 0, 500), "blue") . PHP_EOL . PHP_EOL;
 
 	foreach ($question->{"tags"} as $qtag) {
 		echo $colors->getColoredString("[" . $qtag . "] ", "white", "red");
@@ -68,7 +66,25 @@ foreach ($questions as $question)
 
 	if ($response == "y")
 	{
+		echo "removing [" . $tag . "] tag...";
 		
+		$taglist = implode(";", $question->{"tags"});
+		$taglist = str_replace($tag, "", $taglist);
+		$taglist = str_replace(";;", ";", $taglist);
+
+		$editURL = 'https://api.stackexchange.com/2.2/questions/' . $question->{"question_id"} . '/edit';
+		echo 'https://api.stackexchange.com/2.2/questions/' . $question->{"question_id"} . '/edit';
+		$editData = array('site' => 'stackoverflow', 'preview' => 'false', 'id' => $question->{"question_id"}, 'key' => "6Z09liTt4uTQU*a4DYOXVQ((", 'access_token' => $access_token, 'title' => html_entity_decode($question -> {"title"}, ENT_QUOTES), 'body' => html_entity_decode($question -> {"body_markdown"}, ENT_QUOTES), 'tags' => $taglist, 'comment' => 'rm [' . $tag . '] tag');
+		$options = array(
+			'http' => array(
+				'header'  => "Content-type: application/x-www-form-urlencoded, Accept-Encoding: gzip;q=0, compress;q=0\r\n",
+				'method'  => 'POST',
+				'content' => http_build_query($editData),
+				'ignore_errors' => true,
+			),
+		);
+		$context = stream_context_create($options);
+		print_r(gzdecode(file_get_contents($editURL, false, $context)));
 	}
 }
 
