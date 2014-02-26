@@ -32,13 +32,6 @@ $line = fgets($handle);
 
 $tag = trim($line);
 
-echo 'Tags to replace(space separated, empty if none): ';
-
-$handle = fopen ("php://stdin","r");
-$line = fgets($handle);
-
-$tagr = trim($line).split(" ");
-
 echo "fetching last 100 [" . $tag  . "] questions...";
 
 $questionsurl = 'https://api.stackexchange.com/2.2/questions';
@@ -68,23 +61,14 @@ foreach ($questions as $question)
 
 	$handle = fopen ("php://stdin","r");
 	$line = fgets($handle);
-	$addtags=[];
 
+	$response = trim($line);
 
 	if ($response == "y")
 	{
-		foreach($tagr as $addtag){
-			echo "add [" . $addtag . "] tag? (y/n): ";
-			$handle = fopen ("php://stdin","r");
-			$line = trim(fgets($handle));		
-			if($line=='y'){
-				$addtags[]=$addtag;
-			}
-		}
-		$response = trim($line);
 		echo "removing [" . $tag . "] tag...";
 		
-		$taglist = implode(";", array_merge($question->{"tags"},$addtags));
+		$taglist = implode(";", $question->{"tags"});
 		$taglist = str_replace($tag, "", $taglist);
 		$taglist = str_replace(";;", ";", $taglist);
 
@@ -102,7 +86,6 @@ foreach ($questions as $question)
 		$obj = json_decode(gzdecode(file_get_contents($editURL, false, $context)));
 		
 	}
-
 }
 
 class Curl
